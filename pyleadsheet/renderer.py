@@ -44,8 +44,26 @@ def _prepare_form_section_lyrics(form_section):
         form_section['lyrics_hint'] = (lines[0] if len(lines[0]) <= 50 else lines[0][0:50]) + '...'
 
 
-def _get_output_filename(song_data):
-    return song_data['title'].lower().replace(' ', '_') + '.html'
+def _get_output_filename(song_title):
+    return song_title.lower().replace(' ', '_') + '.html'
+
+
+@funcy.memoize
+def _get_timestamp():
+    return datetime.datetime.now()
+
+
+def _update_template_data(template_data):
+    template_data.update({
+        'timestamp': _get_timestamp()
+    })
+
+
+def _render_template_to_file(template, outputfile, template_data):
+    _update_template_data(template_data)
+    j2env = jinja2.Environment(loader=jinja2.PackageLoader('pyleadsheet', 'templates'))
+    output = open(outputfile, 'w')
+    output.write(j2env.get_template(template).render(**template_data))
 
 
 def render_song(song_data, outputdir):
@@ -58,10 +76,19 @@ def render_song(song_data, outputdir):
         }
     for form_section in song_data['form']:
         _prepare_form_section_lyrics(form_section)
-    template_data = {
-        'song': song_data,
-        'timestamp': datetime.datetime.now()
-    }
-    j2env = jinja2.Environment(loader=jinja2.PackageLoader('pyleadsheet', 'templates'))
-    output = open(os.path.join(outputdir, _get_output_filename(song_data)), 'w')
-    output.write(j2env.get_template('base.jinja2').render(**template_data))
+    outputfile = os.path.join(outputdir, _get_output_filename(song_data['title']))
+    _render_template_to_file('song.jinja2', outputfile, {'song': song_data})
+
+
+def render_index(song_titles, outputdir):
+    _prepare_output_directory(outputdir)
+    songs_by_first_letter = {}
+    current_letter = None
+    for title in sorted(song_titles):
+        if not current_letter or title[0].upper() > current_letter:
+            current_letter = title[0].upper()
+            songs_by_first_letter[current_letter] = []
+        songs_by_first_letter[current_letter].append({'title': title, 'filename': _get_output_filename(title)})
+    outputfile = os.path.join(outputdir, 'index.html')
+    _render_template_to_file('index.jinja2', outputfile, {'songs_by_first_letter': songs_by_first_letter})
+

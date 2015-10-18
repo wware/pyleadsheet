@@ -10,12 +10,14 @@ Options:
     -h            print this help screen
     --output=DIR  directory to place html files in (default: output)
     --format=EXT  right now only html is supported, pdf in the future
+    -C --clean    start from a fresh output diretory
 """
 
 import os
 import docopt
+import shutil
 from .parser import parse_file
-from .renderer import render_song
+from .renderer import render_song, render_index
 
 
 def generate(args):
@@ -32,8 +34,15 @@ def generate(args):
         raise IOError('could not find input: ' + args['<inputfile>'])
 
     outputdir = args['--output'] or 'output'
+    if args['--clean'] and os.path.isdir(outputdir):
+        shutil.rmtree(outputdir)
+
+    song_titles = []
     for yamlfile in inputfiles:
-        render_song(parse_file(yamlfile), outputdir)
+        song_data = parse_file(yamlfile)
+        song_titles.append(song_data['title'])
+        render_song(song_data, outputdir)
+    render_index(song_titles, outputdir)
 
     return 0
 

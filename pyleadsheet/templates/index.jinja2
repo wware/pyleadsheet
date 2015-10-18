@@ -1,0 +1,24 @@
+{% extends "base.jinja2" %}
+
+{% block page_title %}Table of Contents{% endblock %}\
+
+{% block content %}
+
+    <div id="header_container" class="content_container">
+        <div id="song_title">Songbook</div>
+    </div>
+
+    <div id="toc_container" class="content_container">
+        {% for letter, songs in songs_by_first_letter.items() %}
+            <div class="toc_letter">{{ letter }}</div>
+            {% for song in songs %}
+                <div class="row {{ loop.cycle('odd', 'even') }}">
+                    <a href="{{ song.filename }}">{{ song.title }}</a>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <div class="content_container_spacer"></div>
+
+{% endblock %}

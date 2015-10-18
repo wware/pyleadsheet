@@ -91,3 +91,12 @@ body {
 #lyrics_content {
     padding: 0.2em;
 }
+
+/*
+ * I N D E X  P A G E
+ */
+
+.toc_letter {
+    font-size: 1.3em;
+    font-weight: bold;
+}
