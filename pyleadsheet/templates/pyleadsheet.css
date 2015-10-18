@@ -1,0 +1,93 @@
+body {
+    font-family: sans-serif;
+}
+
+.content_container {
+    padding-bottom: .5em;
+    clear: both;
+}
+
+.content_container_title {
+    font-size: 1.2em;
+    font-variant: small-caps;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+}
+
+.content_container_spacer {
+    clear: both;
+    height: 0.5em;
+}
+
+#footer_container {
+    clear: both;
+    font-size: 0.7em;
+}
+
+#song_title {
+    font-size: 1.8em;
+    font-weight: bold;
+    font-variant: small-caps;
+}
+
+#song_attributes {
+    font-size: 0.8em;
+    font-style: italic;
+}
+
+.row {
+    float: left;
+    clear: both;
+    display: inline-block;
+    padding: 0.2em;
+    padding-bottom: 0.35em;
+}
+
+.fixed_width {
+    width: 5em;
+}
+
+.even {
+}
+
+.odd {
+    background-color: #EEE;
+}
+
+.progression_name {
+    float: left;
+    padding-top: 0.4em;
+    padding-right: 0.5em;
+}
+
+.progression_content {
+    float: left;
+}
+
+.progression_measure_delimiter {
+    display: inline-block;
+    font-size: 1.5em;
+}
+
+.progression_measure_subdivision {
+    display: inline-block;
+    width: 1em;
+}
+
+.form_section_progression {
+    float: left;
+}
+
+.form_section_attributes {
+    float: left;
+}
+
+.form_section_lyrics_hint {
+    clear: both;
+    font-style: italic;
+    font-size: 0.8em;
+}
+
+#lyrics_content {
+    padding: 0.2em;
+}
