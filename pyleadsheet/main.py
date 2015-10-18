@@ -14,10 +14,13 @@ Options:
 """
 
 import os
+import sys
 import docopt
 import shutil
 from .parser import parse_file
-from .renderer import render_song, render_index
+from .renderer import HTMLRenderer
+import logging
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 
 def generate(args):
@@ -37,12 +40,10 @@ def generate(args):
     if args['--clean'] and os.path.isdir(outputdir):
         shutil.rmtree(outputdir)
 
-    song_titles = []
+    renderer = HTMLRenderer(outputdir)
     for yamlfile in inputfiles:
-        song_data = parse_file(yamlfile)
-        song_titles.append(song_data['title'])
-        render_song(song_data, outputdir)
-    render_index(song_titles, outputdir)
+        renderer.load_song(parse_file(yamlfile))
+    renderer.render_book()
 
     return 0
 
