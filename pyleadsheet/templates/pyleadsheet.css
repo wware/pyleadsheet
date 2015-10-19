@@ -100,3 +100,16 @@ body {
     font-size: 1.3em;
     font-weight: bold;
 }
+
+.index_table {
+    border-collapse: collapse;
+}
+
+.index_table td {
+    border: none;
+    padding: 0.2em;
+}
+
+.index_song_title {
+    padding-right: 0.5em !important;
+}

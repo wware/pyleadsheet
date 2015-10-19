@@ -7,10 +7,14 @@ Usage:
     pyleadsheet help
 
 Options:
-    -h            print this help screen
-    --output=DIR  directory to place html files in (default: output)
-    --format=EXT  right now only html is supported, pdf in the future
-    -C --clean    start from a fresh output diretory
+    -h             print this help screen
+    --output=DIR   directory to place html files in (default: output)
+    --format=EXT   right now only html is supported, pdf in the future (default: html)
+    --clean        start from a fresh output diretory (default: False)
+    --all          include all of the following 3 types of output (default: True)
+    --combined     include leadsheet and lyrics inline on each page (default: False)
+    --no-lyrics    exclude lyrics from all pages (default: False)
+    --lyrics-only  limit output to lyrics onlye (default: False)
 """
 
 import os
@@ -40,7 +44,23 @@ def generate(args):
     if args['--clean'] and os.path.isdir(outputdir):
         shutil.rmtree(outputdir)
 
-    renderer = HTMLRenderer(outputdir)
+    # set modes
+    combined = no_lyrics = lyrics_only = True
+    if args['--all']:
+        combined = no_lyrics = lyrics_only = True
+    elif args['--combined']:
+        combined = True
+    elif args['--no-lyrics']:
+        no_lyrics = True
+    elif args['--lyrics-only']:
+        lyrics_only = True
+
+    renderer = HTMLRenderer(
+        outputdir,
+        combined=combined,
+        no_lyrics=no_lyrics,
+        lyrics_only=lyrics_only
+    )
     for yamlfile in inputfiles:
         renderer.load_song(parse_file(yamlfile))
     renderer.render_book()

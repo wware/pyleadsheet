@@ -11,11 +11,18 @@
     <div id="toc_container" class="content_container">
         {% for letter, songs in songs_by_first_letter.items() %}
             <div class="toc_letter">{{ letter }}</div>
-            {% for song in songs %}
-                <div class="row {{ loop.cycle('odd', 'even') }}">
-                    <a href="{{ song.filename }}">{{ song.title }}</a>
-                </div>
-            {% endfor %}
+            <table class="index_table">
+                {% for song in songs %}
+                    <tr class="{{ loop.cycle('odd', 'even') }}">
+                        <td class="index_song_title">{{ song.title }}</td>
+                        {% for mode in mode_keys %}
+                            {% if mode_flags[mode] %}
+                                <td><a href="{{ song.filenames[mode] }}">{{ modes[mode]['display_name'] }}</a></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
         {% endfor %}
     </div>
 

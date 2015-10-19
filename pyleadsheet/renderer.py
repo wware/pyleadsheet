@@ -14,10 +14,21 @@ class HTMLRenderer(object):
     SONG_TEMPLATE = 'song.jinja2'
     INDEX_TEMPLATE = 'index.jinja2'
 
-    def __init__(self, outputdir):
+    FILENAME_SUFFIX_COMBINED = 'combined'
+    FILENAME_SUFFIX_NO_LYRICS = 'nolyrics'
+    FILENAME_SUFFIX_LYRICS_ONLY = 'lyrics'
+
+    MODES = {
+        'no_lyrics': {'filename_suffix': 'nolyrics', 'display_name': 'Lead Sheet', 'display_order': 1},
+        'lyrics_only': {'filename_suffix': 'lyrics', 'display_name': 'Lyrics', 'display_order': 2},
+        'combined': {'filename_suffix': 'combined', 'display_name': 'Combined', 'display_order': 3},
+    }
+
+    def __init__(self, outputdir, combined=False, no_lyrics=False, lyrics_only=False):
         logger.debug('initializing HTMLRenderer with outputdir: ' + outputdir)
         self.songs_data = {}
         self.outputdir = os.path.join(outputdir, 'html')
+        self.mode_flags = {'combined': combined, 'no_lyrics': no_lyrics, 'lyrics_only': lyrics_only}
         self.timestamp = datetime.datetime.now()
 
     def _prepare_output_directory(self):
@@ -68,12 +79,17 @@ class HTMLRenderer(object):
             self._prepare_form_section_lyrics(form_section)
         self.songs_data[song_data['title']] = song_data
 
-    def _get_output_filename(self, song_title):
-        return song_title.lower().replace(' ', '_') + '.html'
+    def _get_output_filename(self, song_title, suffix=None):
+        ret = song_title.lower().replace(' ', '_')
+        ret += '_' + suffix if suffix else ''
+        return ret + '.html'
 
     def _update_template_data(self, template_data):
         template_data.update({
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp,
+            'modes': self.MODES,
+            'mode_keys': sorted(self.MODES.keys(), key=lambda(k): self.MODES[k]['display_order']),
+            'mode_flags': self.mode_flags
         })
 
     def _render_template_to_file(self, template, outputfilename, template_data):
@@ -85,11 +101,24 @@ class HTMLRenderer(object):
 
     def render_song(self, song_title):
         logger.info('rendering song: ' + song_title)
-        self._render_template_to_file(
-            self.SONG_TEMPLATE,
-            self._get_output_filename(song_title),
-            {'song': self.songs_data[song_title]}
-        )
+        if self.mode_flags['combined']:
+            self._render_template_to_file(
+                self.SONG_TEMPLATE,
+                self._get_output_filename(song_title, self.MODES['combined']['filename_suffix']),
+                {'song': self.songs_data[song_title], 'render_leadsheet': True, 'render_lyrics': True}
+            )
+        if self.mode_flags['no_lyrics']:
+            self._render_template_to_file(
+                self.SONG_TEMPLATE,
+                self._get_output_filename(song_title, self.FILENAME_SUFFIX_NO_LYRICS),
+                {'song': self.songs_data[song_title], 'render_leadsheet': True, 'render_lyrics': False}
+            )
+        if self.mode_flags['lyrics_only']:
+            self._render_template_to_file(
+                self.SONG_TEMPLATE,
+                self._get_output_filename(song_title, self.FILENAME_SUFFIX_LYRICS_ONLY),
+                {'song': self.songs_data[song_title], 'render_leadsheet': False, 'render_lyrics': True}
+            )
 
     def render_index(self):
         logger.info('rendering index')
@@ -100,8 +129,11 @@ class HTMLRenderer(object):
                 current_letter = title[0].upper()
                 songs_by_first_letter[current_letter] = []
             songs_by_first_letter[current_letter].append(
-                {'title': title, 'filename': self._get_output_filename(title)}
+                {'title': title, 'filenames': {}}
             )
+            for mode in self.MODES.keys():
+                songs_by_first_letter[current_letter][-1]['filenames'][mode] = \
+                        self._get_output_filename(title, self.MODES[mode]['filename_suffix'])
         self._render_template_to_file(
             self.INDEX_TEMPLATE,
             'index.html',
