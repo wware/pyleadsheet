@@ -65,7 +65,8 @@ def generate(args):
         renderer.load_song(parse_file(yamlfile))
     renderer.render_book()
 
-    if args['--format'].lower() == 'pdf':
+    fmt = args['--format']
+    if (fmt and fmt.lower() == 'pdf'):
         converter = HTMLToPDFConverter(outputdir)
         converter.convert_songs()
 
@@ -81,3 +82,6 @@ def main():
 
     elif args['generate']:
         return generate(args)
+
+if __name__ == '__main__':
+    main()
