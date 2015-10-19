@@ -29,7 +29,8 @@ setup(
         'docopt',
         'funcy',
         'pyyaml',
-        'jinja2'
+        'jinja2',
+        'wkhtmltopdf-wrapper'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',

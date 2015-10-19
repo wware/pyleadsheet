@@ -22,7 +22,7 @@ import sys
 import docopt
 import shutil
 from .parser import parse_file
-from .renderer import HTMLRenderer
+from .renderer import HTMLRenderer, HTMLToPDFConverter
 import logging
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -64,6 +64,10 @@ def generate(args):
     for yamlfile in inputfiles:
         renderer.load_song(parse_file(yamlfile))
     renderer.render_book()
+
+    if args['--format'].lower() == 'pdf':
+        converter = HTMLToPDFConverter(outputdir)
+        converter.convert_songs()
 
     return 0
 

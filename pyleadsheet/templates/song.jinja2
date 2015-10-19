@@ -59,7 +59,7 @@
             <div id="lyrics_title" class="content_container_title">Lyrics</div>
             <div id="lyrics_content">
                 {% for section in song.form %}
-                    {% if section.lyrics %}{{ section.lyrics|safe }}<br /><br /{% endif %}
+                    {% if section.lyrics %}{{ section.lyrics|safe }}<br /><br />{% endif %}
                 {% endfor %}
             </div>
         </div>

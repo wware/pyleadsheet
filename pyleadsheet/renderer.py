@@ -3,7 +3,10 @@ import shutil
 import jinja2
 import filecmp
 import datetime
+import json
+from wkhtmltopdfwrapper import wkhtmltopdf
 from .constants import MEASURE, BEAT, HALFBEAT
+from .constants import FILENAME_SUFFIX_COMBINED, FILENAME_SUFFIX_NO_LYRICS, FILENAME_SUFFIX_LYRICS_ONLY
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,21 +16,19 @@ class HTMLRenderer(object):
 
     SONG_TEMPLATE = 'song.jinja2'
     INDEX_TEMPLATE = 'index.jinja2'
-
-    FILENAME_SUFFIX_COMBINED = 'combined'
-    FILENAME_SUFFIX_NO_LYRICS = 'nolyrics'
-    FILENAME_SUFFIX_LYRICS_ONLY = 'lyrics'
+    OUTPUT_SUBDIR = 'html'
+    INDEX_JSON_FILE = '.index.json'
 
     MODES = {
-        'no_lyrics': {'filename_suffix': 'nolyrics', 'display_name': 'Lead Sheet', 'display_order': 1},
-        'lyrics_only': {'filename_suffix': 'lyrics', 'display_name': 'Lyrics', 'display_order': 2},
-        'combined': {'filename_suffix': 'combined', 'display_name': 'Combined', 'display_order': 3},
+        'no_lyrics': {'filename_suffix': FILENAME_SUFFIX_NO_LYRICS, 'display_name': 'Lead Sheet', 'display_order': 1},
+        'lyrics_only': {'filename_suffix': FILENAME_SUFFIX_LYRICS_ONLY, 'display_name': 'Lyrics', 'display_order': 2},
+        'combined': {'filename_suffix': FILENAME_SUFFIX_COMBINED, 'display_name': 'Combined', 'display_order': 3},
     }
 
     def __init__(self, outputdir, combined=False, no_lyrics=False, lyrics_only=False):
         logger.debug('initializing HTMLRenderer with outputdir: ' + outputdir)
         self.songs_data = {}
-        self.outputdir = os.path.join(outputdir, 'html')
+        self.outputdir = os.path.join(outputdir, self.OUTPUT_SUBDIR)
         self.mode_flags = {'combined': combined, 'no_lyrics': no_lyrics, 'lyrics_only': lyrics_only}
         self.timestamp = datetime.datetime.now()
 
@@ -110,13 +111,13 @@ class HTMLRenderer(object):
         if self.mode_flags['no_lyrics']:
             self._render_template_to_file(
                 self.SONG_TEMPLATE,
-                self._get_output_filename(song_title, self.FILENAME_SUFFIX_NO_LYRICS),
+                self._get_output_filename(song_title, self.MODES['no_lyrics']['filename_suffix']),
                 {'song': self.songs_data[song_title], 'render_leadsheet': True, 'render_lyrics': False}
             )
         if self.mode_flags['lyrics_only']:
             self._render_template_to_file(
                 self.SONG_TEMPLATE,
-                self._get_output_filename(song_title, self.FILENAME_SUFFIX_LYRICS_ONLY),
+                self._get_output_filename(song_title, self.MODES['lyrics_only']['filename_suffix']),
                 {'song': self.songs_data[song_title], 'render_leadsheet': False, 'render_lyrics': True}
             )
 
@@ -139,9 +140,58 @@ class HTMLRenderer(object):
             'index.html',
             {'songs_by_first_letter': songs_by_first_letter}
         )
+        json.dump(songs_by_first_letter, open(os.path.join(self.outputdir, self.INDEX_JSON_FILE), 'w'))
 
     def render_book(self):
         logger.info('rendering HTML book')
         for song_title in self.songs_data.keys():
             self.render_song(song_title)
         self.render_index()
+
+
+class HTMLToPDFConverter(object):
+
+    OUTPUT_SUBDIR = 'pdf'
+
+    def __init__(self, outputdir, html_renderer=None):
+        self.html_renderer = html_renderer
+        self.inputdir = os.path.join(outputdir, HTMLRenderer.OUTPUT_SUBDIR)
+        self.outputdir = os.path.join(outputdir, self.OUTPUT_SUBDIR)
+        self.songs_by_first_letter = None
+
+    def _find_sources(self):
+        if not self.songs_by_first_letter:
+            logger.debug('loading index from HTMLRenderer')
+            json_file = os.path.join(self.inputdir, HTMLRenderer.INDEX_JSON_FILE)
+            if not os.path.isfile(json_file):
+                raise IOError('cannot find index file: ' + json_file)
+            self.songs_by_first_letter = json.load(open(json_file, 'r'))
+
+    def _prepare_output_directory(self):
+        if not os.path.isdir(self.outputdir):
+            logger.debug('creating outputdir: ' + self.outputdir)
+            os.makedirs(self.outputdir)
+
+    def _get_output_filename(self, input_filename):
+        output_filename = None
+        for extension in ('htm', 'html'):
+            if input_filename.lower().endswith(extension):
+                output_filename = input_filename.lower().replace(extension, 'pdf')
+        if not output_filename:
+            output_filename = input_filename.lower() + '.pdf'
+        return output_filename
+
+    def convert_songs(self):
+        self._find_sources()
+        self._prepare_output_directory()
+        for songs in self.songs_by_first_letter.values():
+            for song_data in songs:
+                logger.info('converting song to pdf: ' + song_data['title'])
+                wkhtmltopdf(
+                    'file://{0}/{1}'.format(os.path.abspath(self.inputdir), song_data['filenames']['no_lyrics']),
+                    os.path.join(self.outputdir, self._get_output_filename(song_data['filenames']['no_lyrics']))
+                )
+                wkhtmltopdf(
+                    'file://{0}/{1}'.format(os.path.abspath(self.inputdir), song_data['filenames']['lyrics_only']),
+                    os.path.join(self.outputdir, self._get_output_filename(song_data['filenames']['lyrics_only']))
+                )
