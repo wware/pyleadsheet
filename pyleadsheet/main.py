@@ -82,6 +82,3 @@ def main():
 
     elif args['generate']:
         return generate(args)
-
-if __name__ == '__main__':
-    main()
